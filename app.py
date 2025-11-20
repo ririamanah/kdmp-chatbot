@@ -151,9 +151,10 @@ def main():
                 answer = generate_answer(user_input, vectors, texts, metas)
                 st.markdown(answer)
 
-        st.session_state.messages.append({"role": "assistant", "content": answer))
+        st.session_state.messages.append({"role": "assistant", "content": answer})
 
 
 if __name__ == "__main__":
     main()
+
 
