@@ -162,19 +162,21 @@ def main():
 
     user_input = st.chat_input("Tanyakan sesuatu tentang KDMP/KKMP…")
 
-        if user_input:
+    if user_input:
         # Simpan pesan user
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Jawab
+        # Jawaban asisten
         with st.chat_message("assistant"):
             with st.spinner("Mencari jawaban di modul KDMP…"):
-                answer, retrieved = generate_answer(user_input, vectors, texts, metas)
+                answer, retrieved = generate_answer(
+                    user_input, vectors, texts, metas
+                )
                 st.markdown(answer)
 
-                # Tampilkan sumber di bawah jawaban
+                # Tampilkan sumber jawaban
                 if retrieved:
                     unique_sources = []
                     seen = set()
@@ -200,6 +202,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
