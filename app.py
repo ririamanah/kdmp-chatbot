@@ -162,7 +162,7 @@ def main():
 
     user_input = st.chat_input("Tanyakan sesuatu tentang KDMP/KKMP…")
 
-    if user_input:
+        if user_input:
         # Simpan pesan user
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
@@ -170,31 +170,37 @@ def main():
 
         # Jawab
         with st.chat_message("assistant"):
-    with st.spinner("Mencari jawaban di modul KDMP…"):
-        answer, retrieved = generate_answer(user_input, vectors, texts, metas)
-        st.markdown(answer)
+            with st.spinner("Mencari jawaban di modul KDMP…"):
+                answer, retrieved = generate_answer(user_input, vectors, texts, metas)
+                st.markdown(answer)
 
-        # Tampilkan sumber di bawah jawaban
-        if retrieved:
-            unique_sources = []
-            seen = set()
-            for item in retrieved:
-                key = (item["meta"].get("filename"), item["meta"].get("page"))
-                if key not in seen:
-                    seen.add(key)
-                    unique_sources.append(format_source(item["meta"]))
+                # Tampilkan sumber di bawah jawaban
+                if retrieved:
+                    unique_sources = []
+                    seen = set()
+                    for item in retrieved:
+                        key = (
+                            item["meta"].get("filename"),
+                            item["meta"].get("page"),
+                        )
+                        if key not in seen:
+                            seen.add(key)
+                            unique_sources.append(format_source(item["meta"]))
 
-            if unique_sources:
-                st.info(
-                    "**Sumber jawaban:**\n\n"
-                    + "\n".join(f"- {src}" for src in unique_sources)
-                )
+                    if unique_sources:
+                        st.info(
+                            "**Sumber jawaban:**\n\n"
+                            + "\n".join(f"- {src}" for src in unique_sources)
+                        )
 
-st.session_state.messages.append({"role": "assistant", "content": answer})
+        st.session_state.messages.append(
+            {"role": "assistant", "content": answer}
+        )
 
 
 if __name__ == "__main__":
     main()
+
 
 
 
