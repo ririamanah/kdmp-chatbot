@@ -11,6 +11,21 @@ client = OpenAI()
 EMBEDDING_MODEL = "text-embedding-3-small"
 CHAT_MODEL = "gpt-4o-mini"
 
+# Mapping nama file PDF → label modul yang lebih manusiawi
+FILENAME_LABELS = {
+    "mp_1_latar_belakang_dan_tujuan_koperasi_desa_kelurahan_merah_putih_v1.pdf":
+        "MP 1 – Latar Belakang & Tujuan KDMP",
+    "mp2_manajemen_keuangan_dan_pendanaan_komplet_edited.pdf":
+        "MP 2 – Manajemen Keuangan & Pendanaan",
+    "mp_3_manajemen_aset_dan_pengembangan_usaha_kdmp_kkmp.pdf":
+        "MP 3 – Manajemen Aset & Pengembangan Usaha",
+    "mp_4_monitoring_evaluasi_dan_dukungan_pemerintah_terhadap_koperasi_desa_kelurahan_merah_putih_.pdf":
+        "MP 4 – Monitoring, Evaluasi & Dukungan Pemerintah",
+    "mp_5_integritas,_risiko_dan_mitigasi_pengelolaan_kdmp_1009_2025_1.pdf":
+        "MP 5 – Integritas, Risiko & Mitigasi Pengelolaan KDMP",
+    # Tambahkan di sini kalau nanti ada PDF lain
+}
+
 
 def embed_query(query: str):
     """Membuat embedding untuk pertanyaan user."""
@@ -43,6 +58,13 @@ def search_similar_chunks(query, vectors, texts, metas, k=5):
             }
         )
     return results
+    
+def format_source(meta: dict) -> str:
+    """Bikin teks sumber yang rapi: 'MP 3 – Manajemen Aset..., halaman 5'."""
+    filename = meta.get("filename", "dokumen")
+    page = meta.get("page", "?")
+    label = FILENAME_LABELS.get(filename, filename)
+    return f"{label}, halaman {page}"
 
 
 def build_prompt(question, retrieved_chunks):
@@ -74,7 +96,6 @@ def build_prompt(question, retrieved_chunks):
 
 
 def generate_answer(question, vectors, texts, metas):
-    """Mengambil konteks relevan lalu minta jawaban ke model Chat."""
     retrieved = search_similar_chunks(question, vectors, texts, metas, k=5)
     prompt = build_prompt(question, retrieved)
 
@@ -95,7 +116,9 @@ def generate_answer(question, vectors, texts, metas):
         ],
     )
 
-    return completion.choices[0].message.content
+    answer = completion.choices[0].message.content
+    return answer, retrieved
+
 
 
 @st.cache_resource(show_spinner="Memuat basis pengetahuan KDMP…")
@@ -147,14 +170,31 @@ def main():
 
         # Jawab
         with st.chat_message("assistant"):
-            with st.spinner("Mencari jawaban di modul KDMP…"):
-                answer = generate_answer(user_input, vectors, texts, metas)
-                st.markdown(answer)
+    with st.spinner("Mencari jawaban di modul KDMP…"):
+        answer, retrieved = generate_answer(user_input, vectors, texts, metas)
+        st.markdown(answer)
 
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        # Tampilkan sumber di bawah jawaban
+        if retrieved:
+            unique_sources = []
+            seen = set()
+            for item in retrieved:
+                key = (item["meta"].get("filename"), item["meta"].get("page"))
+                if key not in seen:
+                    seen.add(key)
+                    unique_sources.append(format_source(item["meta"]))
+
+            if unique_sources:
+                st.info(
+                    "**Sumber jawaban:**\n\n"
+                    + "\n".join(f"- {src}" for src in unique_sources)
+                )
+
+st.session_state.messages.append({"role": "assistant", "content": answer})
 
 
 if __name__ == "__main__":
     main()
+
 
 
